@@ -133,27 +133,22 @@ const Index = () => {
 
         {/* Input Area */}
         <div className="border-t border-border/50 p-4">
-          <div className="max-w-4xl mx-auto space-y-3">
-            <ChatInput onSend={handleSendMessage} disabled={isTyping} />
-            <div className="text-center space-y-1">
-              <p className="text-xs text-muted-foreground">
-                Crafted by <a 
-                  href="https://www.linkedin.com/in/pradeep-kumars/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline transition-colors"
-                >
-                  Pradeep
-                </a>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Assisted by LLMs
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
+  <div className="max-w-4xl mx-auto space-y-3">
+    <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+    <div className="text-center">
+      <p className="text-xs text-muted-foreground">
+        Crafted by <a 
+          href="https://www.linkedin.com/in/pradeep-kumars/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-primary hover:underline transition-colors"
+        >
+          Pradeep
+        </a> • Assisted by LLMs
+      </p>
     </div>
+  </div>
+</div>
   );
 };
 
