@@ -133,8 +133,13 @@ const Index = () => {
 
         {/* Input Area */}
         <div className="border-t border-border/50 p-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-3">
             <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">
+                Crafted by Pradeep
+              </p>
+            </div>
           </div>
         </div>
       </main>
