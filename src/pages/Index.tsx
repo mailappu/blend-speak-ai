@@ -137,7 +137,14 @@ const Index = () => {
             <ChatInput onSend={handleSendMessage} disabled={isTyping} />
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                Crafted by Pradeep
+                Crafted by <a 
+                  href="https://www.linkedin.com/in/pradeep-kumars/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline transition-colors"
+                >
+                  Pradeep
+                </a>
               </p>
             </div>
           </div>
