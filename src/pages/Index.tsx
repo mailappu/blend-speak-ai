@@ -7,7 +7,7 @@ import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, HelpCircle } from "lucide-react";
 
 interface Message {
   id: string;
@@ -89,13 +89,24 @@ const Index = () => {
         <header className="border-b border-border/50 p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Multi-Model AI Chat</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/settings")}
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/help")}
+                title="Help"
+              >
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/settings")}
+                title="Settings"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
           <ModelSelector 
             selectedModels={selectedModels} 
