@@ -1,5 +1,7 @@
 import { Brain, Zap, Sparkles, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface Model {
   id: string;
@@ -110,56 +112,26 @@ export const ModelSelector = ({ selectedModels, onSelect, consolidatorModel, onC
         </div>
       </div>
 
-      <div>
-        <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-4">
+      <div className="px-4 pb-4">
+        <Label htmlFor="consolidator" className="text-sm font-semibold text-muted-foreground mb-2 block">
           Consolidator Model (combines responses)
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 glass-card rounded-xl">
-          {models.map((model) => {
-            const Icon = model.icon;
-            const isConsolidator = consolidatorModel === model.id;
-            
-            return (
-              <button
-                key={model.id}
-                onClick={() => onConsolidatorChange(model.id)}
-                className={cn(
-                  "relative p-4 rounded-lg transition-all group",
-                  "hover:scale-105 active:scale-95",
-                  isConsolidator 
-                    ? "bg-gradient-to-br " + model.color + " shadow-lg glow-effect" 
-                    : "bg-secondary/50 hover:bg-secondary"
-                )}
-              >
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <div className={cn(
-                    "p-2 rounded-lg transition-colors",
-                    isConsolidator ? "bg-white/20" : "bg-primary/10 group-hover:bg-primary/20"
-                  )}>
-                    <Icon className={cn(
-                      "h-5 w-5",
-                      isConsolidator ? "text-white" : "text-primary"
-                    )} />
-                  </div>
-                  <div>
-                    <p className={cn(
-                      "text-sm font-semibold",
-                      isConsolidator ? "text-white" : "text-foreground"
-                    )}>
-                      {model.name}
-                    </p>
-                    <p className={cn(
-                      "text-xs",
-                      isConsolidator ? "text-white/80" : "text-muted-foreground"
-                    )}>
-                      {model.description}
-                    </p>
-                  </div>
+        </Label>
+        <Select value={consolidatorModel} onValueChange={onConsolidatorChange}>
+          <SelectTrigger id="consolidator" className="glass-card">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {models.map((model) => (
+              <SelectItem key={model.id} value={model.id}>
+                <div className="flex items-center gap-2">
+                  <model.icon className="h-4 w-4" />
+                  <span>{model.name}</span>
+                  <span className="text-xs text-muted-foreground">- {model.description}</span>
                 </div>
-              </button>
-            );
-          })}
-        </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
