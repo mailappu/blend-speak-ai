@@ -14,7 +14,7 @@ interface ApiKeys {
   custom: string;
 }
 
-export const Settings = () => {
+const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
