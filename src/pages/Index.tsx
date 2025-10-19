@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { ModelSelector } from "@/components/ModelSelector";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 
 interface Message {
   id: string;
@@ -14,7 +17,9 @@ interface Message {
 }
 
 const Index = () => {
-  const [selectedModel, setSelectedModel] = useState("gpt4");
+  const navigate = useNavigate();
+  const [selectedModels, setSelectedModels] = useState<string[]>(["gpt4"]);
+  const [consolidatorModel, setConsolidatorModel] = useState("claude");
   const [activeConversation, setActiveConversation] = useState("1");
   const [isTyping, setIsTyping] = useState(false);
   
@@ -44,12 +49,13 @@ const Index = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
-    // Simulate AI response
+    // Simulate multi-model AI response
     setTimeout(() => {
+      const modelNames = selectedModels.map(m => m.toUpperCase()).join(", ");
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `I understand you're asking about "${content}". This is a simulated response using the ${selectedModel.toUpperCase()} model. In a production environment, this would connect to real AI APIs to provide intelligent responses based on your query.`,
+        content: `Multi-model response: Queried ${modelNames} and consolidated with ${consolidatorModel.toUpperCase()}.\n\nYour question: "${content}"\n\nThis simulated response demonstrates how multiple AI models would process your query and the ${consolidatorModel.toUpperCase()} model would synthesize their outputs into a comprehensive answer.`,
         timestamp: "Just now"
       };
       
@@ -81,9 +87,21 @@ const Index = () => {
       <main className="flex-1 flex flex-col h-screen">
         {/* Header with Model Selector */}
         <header className="border-b border-border/50 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Multi-Model AI Chat</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/settings")}
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+          </div>
           <ModelSelector 
-            selectedModel={selectedModel} 
-            onSelect={setSelectedModel}
+            selectedModels={selectedModels} 
+            onSelect={setSelectedModels}
+            consolidatorModel={consolidatorModel}
+            onConsolidatorChange={setConsolidatorModel}
           />
         </header>
 

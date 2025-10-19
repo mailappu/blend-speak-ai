@@ -41,29 +41,44 @@ const models: Model[] = [
 ];
 
 interface ModelSelectorProps {
-  selectedModel: string;
-  onSelect: (modelId: string) => void;
+  selectedModels: string[];
+  onSelect: (modelIds: string[]) => void;
+  consolidatorModel: string;
+  onConsolidatorChange: (modelId: string) => void;
 }
 
-export const ModelSelector = ({ selectedModel, onSelect }: ModelSelectorProps) => {
+export const ModelSelector = ({ selectedModels, onSelect, consolidatorModel, onConsolidatorChange }: ModelSelectorProps) => {
+  const toggleModel = (modelId: string) => {
+    if (selectedModels.includes(modelId)) {
+      onSelect(selectedModels.filter(id => id !== modelId));
+    } else {
+      onSelect([...selectedModels, modelId]);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 glass-card rounded-xl">
-      {models.map((model) => {
-        const Icon = model.icon;
-        const isSelected = selectedModel === model.id;
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-4">
+          Select Models to Query (multiple)
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 glass-card rounded-xl">
+          {models.map((model) => {
+            const Icon = model.icon;
+            const isSelected = selectedModels.includes(model.id);
         
-        return (
-          <button
-            key={model.id}
-            onClick={() => onSelect(model.id)}
-            className={cn(
-              "relative p-4 rounded-lg transition-all group",
-              "hover:scale-105 active:scale-95",
-              isSelected 
-                ? "bg-gradient-to-br " + model.color + " shadow-lg glow-effect" 
-                : "bg-secondary/50 hover:bg-secondary"
-            )}
-          >
+            return (
+              <button
+                key={model.id}
+                onClick={() => toggleModel(model.id)}
+                className={cn(
+                  "relative p-4 rounded-lg transition-all group",
+                  "hover:scale-105 active:scale-95",
+                  isSelected 
+                    ? "bg-gradient-to-br " + model.color + " shadow-lg glow-effect" 
+                    : "bg-secondary/50 hover:bg-secondary"
+                )}
+              >
             <div className="flex flex-col items-center gap-2 text-center">
               <div className={cn(
                 "p-2 rounded-lg transition-colors",
@@ -89,9 +104,63 @@ export const ModelSelector = ({ selectedModel, onSelect }: ModelSelectorProps) =
                 </p>
               </div>
             </div>
-          </button>
-        );
-      })}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-4">
+          Consolidator Model (combines responses)
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 glass-card rounded-xl">
+          {models.map((model) => {
+            const Icon = model.icon;
+            const isConsolidator = consolidatorModel === model.id;
+            
+            return (
+              <button
+                key={model.id}
+                onClick={() => onConsolidatorChange(model.id)}
+                className={cn(
+                  "relative p-4 rounded-lg transition-all group",
+                  "hover:scale-105 active:scale-95",
+                  isConsolidator 
+                    ? "bg-gradient-to-br " + model.color + " shadow-lg glow-effect" 
+                    : "bg-secondary/50 hover:bg-secondary"
+                )}
+              >
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <div className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    isConsolidator ? "bg-white/20" : "bg-primary/10 group-hover:bg-primary/20"
+                  )}>
+                    <Icon className={cn(
+                      "h-5 w-5",
+                      isConsolidator ? "text-white" : "text-primary"
+                    )} />
+                  </div>
+                  <div>
+                    <p className={cn(
+                      "text-sm font-semibold",
+                      isConsolidator ? "text-white" : "text-foreground"
+                    )}>
+                      {model.name}
+                    </p>
+                    <p className={cn(
+                      "text-xs",
+                      isConsolidator ? "text-white/80" : "text-muted-foreground"
+                    )}>
+                      {model.description}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };
