@@ -13,11 +13,11 @@ export const ChatMessage = ({ role, content, timestamp }: ChatMessageProps) => {
   
   return (
     <div className={cn(
-      "flex gap-4 p-6 rounded-xl message-enter",
+      "flex gap-3 sm:gap-4 p-4 sm:p-6 rounded-xl message-enter",
       isUser ? "bg-secondary/30" : "bg-card/30"
     )}>
       <Avatar className={cn(
-        "h-8 w-8 border-2",
+        "h-8 w-8 shrink-0 border-2",
         isUser ? "border-accent" : "border-primary"
       )}>
         <AvatarFallback className={cn(
@@ -31,14 +31,14 @@ export const ChatMessage = ({ role, content, timestamp }: ChatMessageProps) => {
       <div className="flex-1 space-y-2 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">
-            {isUser ? "You" : "AI Assistant"}
+            {isUser ? "You" : "SuperLLM"}
           </p>
           {timestamp && (
             <p className="text-xs text-muted-foreground">{timestamp}</p>
           )}
         </div>
         <div className="prose prose-invert prose-sm max-w-none">
-          <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed">
+          <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed break-words">
             {content}
           </p>
         </div>
