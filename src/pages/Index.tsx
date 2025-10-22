@@ -53,9 +53,10 @@ Easy to use on desktop and mobile devices.
 Try asking me anything!`;
 
 const modelConfigs = [
-  { id: "gpt-4", name: "GPT-4", provider: "openai" as const, color: "from-blue-500 to-cyan-500" },
-  { id: "claude-sonnet", name: "Claude Sonnet", provider: "anthropic" as const, color: "from-purple-500 to-pink-500" },
-  { id: "gemini-pro", name: "Gemini Pro", provider: "google" as const, color: "from-orange-500 to-yellow-500" },
+  { id: "gpt-4", name: "ChatGPT", provider: "openai" as const, color: "from-blue-500 to-cyan-500" },
+  { id: "claude-sonnet", name: "Claude", provider: "anthropic" as const, color: "from-purple-500 to-pink-500" },
+  { id: "gemini-pro", name: "Gemini", provider: "google" as const, color: "from-orange-500 to-yellow-500" },
+  { id: "custom", name: "Custom", provider: "openai" as const, color: "from-green-500 to-emerald-500" },
 ];
 
 const Index = () => {
@@ -189,11 +190,11 @@ const Index = () => {
         />
       </div>
 
-      <main className="flex-1 flex flex-col h-screen">
+      <main className="flex-1 flex flex-col h-screen max-h-screen overflow-hidden">
         {/* Header with Model Selector */}
-        <header className="border-b border-border/50 p-3 sm:p-4">
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg font-semibold">SuperLLM</h2>
+        <header className="border-b border-border/50 p-2 sm:p-3 flex-shrink-0">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm sm:text-base font-semibold">SuperLLM</h2>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
@@ -222,15 +223,16 @@ const Index = () => {
         </header>
 
         {/* Messages Area */}
-        <ScrollArea className="flex-1 p-3 sm:p-6">
-          <div className="max-w-6xl mx-auto space-y-6">
+        <ScrollArea className="flex-1 p-2 sm:p-3">
+          <div className="max-w-6xl mx-auto space-y-3">
             {messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                role={message.role}
-                content={message.content}
-                timestamp={message.timestamp}
-              />
+              <div key={message.id} className="text-xs sm:text-sm">
+                <ChatMessage
+                  role={message.role}
+                  content={message.content}
+                  timestamp={message.timestamp}
+                />
+              </div>
             ))}
             
             {/* Model Responses */}
@@ -247,10 +249,10 @@ const Index = () => {
                 
                 {/* Individual Model Responses */}
                 <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                    Individual Model Responses
+                  <h3 className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-2">
+                    Individual Responses
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[200px]">
                     {selectedModels.map(modelId => {
                       const config = modelConfigs.find(m => m.id === modelId);
                       const response = modelResponses[modelId];
@@ -275,14 +277,14 @@ const Index = () => {
         </ScrollArea>
 
         {/* Input Area */}
-        <div className="border-t border-border/50 p-3 sm:p-4">
-          <div className="max-w-6xl mx-auto space-y-2 sm:space-y-3">
+        <div className="border-t border-border/50 p-2 sm:p-3 flex-shrink-0">
+          <div className="max-w-6xl mx-auto space-y-1 sm:space-y-2">
             <ChatInput 
               onSend={handleSendMessage} 
               disabled={loadingModels.size > 0 || isConsolidating} 
             />
             <div className="text-center">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
                 Crafted by <a 
                   href="https://www.linkedin.com/in/pradeep-kumars/" 
                   target="_blank" 

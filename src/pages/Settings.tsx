@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ApiKeys {
@@ -17,6 +17,13 @@ interface ApiKeys {
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  const [showKeys, setShowKeys] = useState({
+    openai: false,
+    anthropic: false,
+    google: false,
+    custom: false,
+  });
   
   const [apiKeys, setApiKeys] = useState<ApiKeys>({
     openai: localStorage.getItem("openai_api_key") || "",
@@ -37,6 +44,10 @@ const Settings = () => {
     });
   };
 
+  const toggleShowKey = (provider: keyof ApiKeys) => {
+    setShowKeys(prev => ({ ...prev, [provider]: !prev[provider] }));
+  };
+
   const handleChange = (provider: keyof ApiKeys, value: string) => {
     setApiKeys(prev => ({ ...prev, [provider]: value }));
   };
@@ -52,7 +63,7 @@ const Settings = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold">Settings</h1>
+          <h1 className="text-3xl font-bold">SuperLLM Settings</h1>
         </div>
 
         <Card className="glass-card">
@@ -64,52 +75,100 @@ const Settings = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="openai">OpenAI API Key (GPT-4)</Label>
-              <Input
-                id="openai"
-                type="password"
-                placeholder="sk-..."
-                value={apiKeys.openai}
-                onChange={(e) => handleChange("openai", e.target.value)}
-              />
+              <Label htmlFor="openai">OpenAI API Key (ChatGPT GPT-4)</Label>
+              <div className="relative">
+                <Input
+                  id="openai"
+                  type={showKeys.openai ? "text" : "password"}
+                  placeholder="sk-..."
+                  value={apiKeys.openai}
+                  onChange={(e) => handleChange("openai", e.target.value)}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => toggleShowKey("openai")}
+                >
+                  {showKeys.openai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="anthropic">Anthropic API Key (Claude)</Label>
-              <Input
-                id="anthropic"
-                type="password"
-                placeholder="sk-ant-..."
-                value={apiKeys.anthropic}
-                onChange={(e) => handleChange("anthropic", e.target.value)}
-              />
+              <Label htmlFor="anthropic">Anthropic API Key (Claude 3.5 Sonnet)</Label>
+              <div className="relative">
+                <Input
+                  id="anthropic"
+                  type={showKeys.anthropic ? "text" : "password"}
+                  placeholder="sk-ant-..."
+                  value={apiKeys.anthropic}
+                  onChange={(e) => handleChange("anthropic", e.target.value)}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => toggleShowKey("anthropic")}
+                >
+                  {showKeys.anthropic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="google">Google API Key (Gemini)</Label>
-              <Input
-                id="google"
-                type="password"
-                placeholder="AIza..."
-                value={apiKeys.google}
-                onChange={(e) => handleChange("google", e.target.value)}
-              />
+              <Label htmlFor="google">Google API Key (Gemini 1.5 Pro)</Label>
+              <div className="relative">
+                <Input
+                  id="google"
+                  type={showKeys.google ? "text" : "password"}
+                  placeholder="AIza..."
+                  value={apiKeys.google}
+                  onChange={(e) => handleChange("google", e.target.value)}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => toggleShowKey("google")}
+                >
+                  {showKeys.google ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="custom">Custom API Key</Label>
-              <Input
-                id="custom"
-                type="password"
-                placeholder="Your custom model API key"
-                value={apiKeys.custom}
-                onChange={(e) => handleChange("custom", e.target.value)}
-              />
+              <Label htmlFor="custom">Custom Model API Key</Label>
+              <div className="relative">
+                <Input
+                  id="custom"
+                  type={showKeys.custom ? "text" : "password"}
+                  placeholder="Your custom model API key"
+                  value={apiKeys.custom}
+                  onChange={(e) => handleChange("custom", e.target.value)}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => toggleShowKey("custom")}
+                >
+                  {showKeys.custom ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
 
             <Button onClick={handleSave} className="w-full">
               <Save className="h-4 w-4 mr-2" />
-              Save Settings
+              Save API Keys
             </Button>
           </CardContent>
         </Card>

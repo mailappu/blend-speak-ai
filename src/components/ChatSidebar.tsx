@@ -15,14 +15,9 @@ export const ChatSidebar = ({ conversations, activeId, onSelect, onNewChat }: Ch
     <aside className="w-72 glass-card border-r flex flex-col h-screen">
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center gap-2 mb-4">
-          <div className="relative">
-            <Sparkles className="h-6 w-6 text-primary" />
-            <div className="absolute inset-0 blur-md opacity-50">
-              <Sparkles className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-          <h1 className="text-lg font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            MultiModel AI
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            SuperLLM
           </h1>
         </div>
         <Button 
