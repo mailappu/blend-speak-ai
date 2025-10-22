@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChatSidebar } from "@/components/ChatSidebar";
-import { ModelSelector, models } from "@/components/ModelSelector";
+import { ModelSelector } from "@/components/ModelSelector";
+import { ModelResponseCard } from "@/components/ModelResponseCard";
+import { ConsolidatedResponse } from "@/components/ConsolidatedResponse";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
-import { TypingIndicator } from "@/components/TypingIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Settings, HelpCircle } from "lucide-react";
-import { streamChat, Message as ApiMessage } from "@/lib/chatApi";
+import { callMultipleModels, consolidateResponses, ModelResponse, Message as ApiMessage } from "@/lib/multiModelChat";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -51,12 +52,22 @@ Easy to use on desktop and mobile devices.
 
 Try asking me anything!`;
 
+const modelConfigs = [
+  { id: "gpt-4", name: "GPT-4", provider: "openai" as const, color: "from-blue-500 to-cyan-500" },
+  { id: "claude-sonnet", name: "Claude Sonnet", provider: "anthropic" as const, color: "from-purple-500 to-pink-500" },
+  { id: "gemini-pro", name: "Gemini Pro", provider: "google" as const, color: "from-orange-500 to-yellow-500" },
+];
+
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedModel, setSelectedModel] = useState("gemini-flash");
+  const [selectedModels, setSelectedModels] = useState<string[]>(["gpt-4"]);
   const [activeConversation, setActiveConversation] = useState("1");
-  const [isTyping, setIsTyping] = useState(false);
+  const [modelResponses, setModelResponses] = useState<Record<string, ModelResponse>>({});
+  const [loadingModels, setLoadingModels] = useState<Set<string>>(new Set());
+  const [consolidatedResponse, setConsolidatedResponse] = useState<string>("");
+  const [isConsolidating, setIsConsolidating] = useState(false);
+  const [selectedConsolidator, setSelectedConsolidator] = useState("gpt-4");
   
   const [conversations] = useState([
     { id: "1", title: "Getting Started", timestamp: "Just now" },
@@ -73,7 +84,24 @@ const Index = () => {
     }
   ]);
 
+  const handleToggleModel = (modelId: string) => {
+    setSelectedModels(prev => 
+      prev.includes(modelId) 
+        ? prev.filter(id => id !== modelId)
+        : [...prev, modelId]
+    );
+  };
+
   const handleSendMessage = async (content: string) => {
+    if (selectedModels.length === 0) {
+      toast({
+        title: "No models selected",
+        description: "Please select at least one AI model",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -82,50 +110,60 @@ const Index = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
+    setModelResponses({});
+    setConsolidatedResponse("");
+    
+    const apiMessages: ApiMessage[] = [
+      { role: "system", content: "You are a helpful AI assistant." },
+      ...messages.map(m => ({
+        role: m.role as "user" | "assistant" | "system",
+        content: m.content
+      })),
+      { role: "user", content }
+    ];
 
-    const apiMessages: ApiMessage[] = messages.map(m => ({
-      role: m.role,
-      content: m.content
-    }));
-    apiMessages.push({ role: "user", content });
-
-    let assistantSoFar = "";
-    const selectedModelData = models.find(m => m.id === selectedModel);
-    const apiModel = selectedModelData?.apiModel || "google/gemini-2.5-flash";
-
-    const upsertAssistant = (nextChunk: string) => {
-      assistantSoFar += nextChunk;
-      setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.role === "assistant") {
-          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
-        }
-        return [...prev, { 
-          id: (Date.now() + 1).toString(), 
-          role: "assistant", 
-          content: assistantSoFar,
-          timestamp: "Just now"
-        }];
-      });
-    };
+    const selectedModelConfigs = modelConfigs.filter(m => selectedModels.includes(m.id));
+    setLoadingModels(new Set(selectedModels));
 
     try {
-      await streamChat({
-        messages: apiMessages,
-        model: apiModel,
-        onDelta: (chunk) => upsertAssistant(chunk),
-        onDone: () => setIsTyping(false),
-      });
+      const responses = await callMultipleModels(
+        selectedModelConfigs,
+        apiMessages,
+        (modelId, result) => {
+          setModelResponses(prev => ({ ...prev, [modelId]: result }));
+          setLoadingModels(prev => {
+            const next = new Set(prev);
+            next.delete(modelId);
+            return next;
+          });
+        }
+      );
+
+      // Auto-consolidate with selected model
+      const consolidatorConfig = modelConfigs.find(m => m.id === selectedConsolidator);
+      if (consolidatorConfig && responses.some(r => r.content)) {
+        setIsConsolidating(true);
+        try {
+          const consolidated = await consolidateResponses(responses, consolidatorConfig);
+          setConsolidatedResponse(consolidated);
+        } catch (error) {
+          console.error("Consolidation error:", error);
+          toast({
+            title: "Consolidation failed",
+            description: error instanceof Error ? error.message : "Failed to consolidate responses",
+            variant: "destructive",
+          });
+        } finally {
+          setIsConsolidating(false);
+        }
+      }
     } catch (e) {
       console.error(e);
-      setIsTyping(false);
       toast({
         title: "Error",
-        description: e instanceof Error ? e.message : "Failed to get response",
+        description: e instanceof Error ? e.message : "Failed to get responses",
         variant: "destructive",
       });
-      setMessages(prev => prev.slice(0, -1));
     }
   };
 
@@ -178,14 +216,14 @@ const Index = () => {
             </div>
           </div>
           <ModelSelector 
-            selectedModel={selectedModel} 
-            onSelect={setSelectedModel}
+            selectedModels={selectedModels} 
+            onToggle={handleToggleModel}
           />
         </header>
 
         {/* Messages Area */}
         <ScrollArea className="flex-1 p-3 sm:p-6">
-          <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4">
+          <div className="max-w-6xl mx-auto space-y-6">
             {messages.map((message) => (
               <ChatMessage
                 key={message.id}
@@ -194,14 +232,55 @@ const Index = () => {
                 timestamp={message.timestamp}
               />
             ))}
-            {isTyping && <TypingIndicator />}
+            
+            {/* Model Responses */}
+            {Object.keys(modelResponses).length > 0 && (
+              <div className="space-y-6">
+                {/* Consolidated Response */}
+                <ConsolidatedResponse
+                  consolidatedResponse={consolidatedResponse}
+                  isConsolidating={isConsolidating}
+                  selectedConsolidator={selectedConsolidator}
+                  onConsolidatorChange={setSelectedConsolidator}
+                  availableModels={modelConfigs.filter(m => selectedModels.includes(m.id))}
+                />
+                
+                {/* Individual Model Responses */}
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                    Individual Model Responses
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {selectedModels.map(modelId => {
+                      const config = modelConfigs.find(m => m.id === modelId);
+                      const response = modelResponses[modelId];
+                      const isLoading = loadingModels.has(modelId);
+                      
+                      return (
+                        <ModelResponseCard
+                          key={modelId}
+                          modelName={config?.name || modelId}
+                          response={response?.content}
+                          isLoading={isLoading}
+                          error={response?.error}
+                          color={config?.color || "from-gray-500 to-gray-700"}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
 
         {/* Input Area */}
         <div className="border-t border-border/50 p-3 sm:p-4">
-          <div className="max-w-4xl mx-auto space-y-2 sm:space-y-3">
-            <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+          <div className="max-w-6xl mx-auto space-y-2 sm:space-y-3">
+            <ChatInput 
+              onSend={handleSendMessage} 
+              disabled={loadingModels.size > 0 || isConsolidating} 
+            />
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
                 Crafted by <a 
