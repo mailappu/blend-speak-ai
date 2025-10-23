@@ -10,15 +10,20 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, apiKey, model = "gpt-4" } = await req.json();
+    console.log("OpenAI function called");
+    const { messages, apiKey, model = "gpt-4o" } = await req.json();
+    console.log("Model requested:", model);
+    console.log("API key present:", !!apiKey);
     
     if (!apiKey) {
+      console.error("No API key provided");
       return new Response(
-        JSON.stringify({ error: "OpenAI API key is required" }), 
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "OpenAI API key is required. Please add it in Settings." }), 
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("Calling OpenAI API...");
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -32,17 +37,29 @@ serve(async (req) => {
       }),
     });
 
+    console.log("OpenAI API response status:", response.status);
+
     if (!response.ok) {
       const error = await response.text();
-      console.error("OpenAI API error:", error);
+      console.error("OpenAI API error response:", error);
+      
+      let errorMessage = "OpenAI API request failed";
+      try {
+        const errorData = JSON.parse(error);
+        errorMessage = errorData.error?.message || errorMessage;
+      } catch (e) {
+        // If parsing fails, use default message
+      }
+      
       return new Response(
-        JSON.stringify({ error: "OpenAI API request failed" }), 
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: `OpenAI Error: ${errorMessage}` }), 
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
+    console.log("Successfully got response from OpenAI");
 
     return new Response(
       JSON.stringify({ content }), 
@@ -51,8 +68,8 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in chat-openai:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), 
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error occurred" }), 
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

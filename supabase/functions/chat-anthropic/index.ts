@@ -10,12 +10,16 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    console.log("Anthropic function called");
     const { messages, apiKey, model = "claude-sonnet-4-5" } = await req.json();
+    console.log("Model requested:", model);
+    console.log("API key present:", !!apiKey);
     
     if (!apiKey) {
+      console.error("No API key provided");
       return new Response(
-        JSON.stringify({ error: "Anthropic API key is required" }), 
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Anthropic API key is required. Please add it in Settings." }), 
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -23,6 +27,7 @@ serve(async (req) => {
     const anthropicMessages = messages.filter((m: any) => m.role !== "system");
     const systemMessage = messages.find((m: any) => m.role === "system")?.content || "";
 
+    console.log("Calling Anthropic API...");
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -38,17 +43,29 @@ serve(async (req) => {
       }),
     });
 
+    console.log("Anthropic API response status:", response.status);
+
     if (!response.ok) {
       const error = await response.text();
-      console.error("Anthropic API error:", error);
+      console.error("Anthropic API error response:", error);
+      
+      let errorMessage = "Anthropic API request failed";
+      try {
+        const errorData = JSON.parse(error);
+        errorMessage = errorData.error?.message || errorMessage;
+      } catch (e) {
+        // If parsing fails, use default message
+      }
+      
       return new Response(
-        JSON.stringify({ error: "Anthropic API request failed" }), 
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: `Claude Error: ${errorMessage}` }), 
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
     const content = data.content?.[0]?.text || "";
+    console.log("Successfully got response from Anthropic");
 
     return new Response(
       JSON.stringify({ content }), 
@@ -57,8 +74,8 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in chat-anthropic:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), 
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error occurred" }), 
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
