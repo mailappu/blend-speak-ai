@@ -91,32 +91,13 @@ const Help = () => {
                   </p>
                 </AccordionContent>
               </AccordionItem>
-
-              <AccordionItem value="custom">
-                <AccordionTrigger className="text-lg font-semibold">
-                  Custom Model API Key
-                </AccordionTrigger>
-                <AccordionContent className="space-y-4 text-muted-foreground">
-                  <p>For custom or fine-tuned models, follow your provider's documentation:</p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Hugging Face:</strong> Get token from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-                      Settings <ExternalLink className="h-3 w-3" />
-                    </a></li>
-                    <li><strong>OpenRouter:</strong> Get key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-                      Dashboard <ExternalLink className="h-3 w-3" />
-                    </a></li>
-                    <li><strong>Azure OpenAI:</strong> Get credentials from Azure Portal</li>
-                    <li><strong>Other providers:</strong> Check their documentation for API access</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
             </Accordion>
           </CardContent>
         </Card>
 
         <Card className="glass-card">
           <CardHeader>
-            <CardTitle>How Multi-Model Chat Works</CardTitle>
+            <CardTitle>How Super LLM Works</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">
             <div className="space-y-2">
@@ -136,7 +117,7 @@ const Help = () => {
 
             <div className="p-4 bg-primary/10 rounded-lg border border-primary/20 mt-6">
               <p className="text-sm text-foreground">
-                <strong>Pro Tip:</strong> Use multiple models to get diverse perspectives, then let a powerful model like GPT-4 or Claude consolidate the best insights.
+                <strong>Pro Tip:</strong> Use multiple models to get diverse perspectives, then let any one model of your choice consolidate the best insights.
               </p>
             </div>
           </CardContent>

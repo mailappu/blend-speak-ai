@@ -117,7 +117,6 @@ const Settings = () => {
             <CardTitle>Consolidation Prompt Template</CardTitle>
             <CardDescription>
               Customize the prompt used when consolidating responses from multiple models.
-              Use {"{responses}"} as a placeholder for the model outputs.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
