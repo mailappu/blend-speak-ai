@@ -84,14 +84,20 @@ export const consolidateResponses = async (
     .map((r) => `${r.modelName}:\n${r.content}`)
     .join("\n\n---\n\n");
 
+  // Get custom consolidation template from localStorage
+  const templateRaw = localStorage.getItem("consolidation_template");
+  const template = templateRaw || `You are an expert AI tasked with merging multiple model responses into one clear, accurate, and coherent answer.
+
+Review all answers below, resolve contradictions, and write the best unified response.
+
+{responses}`;
+
+  const userContent = template.replace("{responses}", responsesText);
+
   const consolidationPrompt: Message[] = [
     {
-      role: "system",
-      content: "You are a helpful assistant that consolidates multiple AI responses into a single coherent summary.",
-    },
-    {
       role: "user",
-      content: `Please summarize and consolidate these responses from different AI models:\n\n${responsesText}`,
+      content: userContent,
     },
   ];
 

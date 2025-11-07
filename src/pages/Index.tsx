@@ -1,96 +1,129 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChatSidebar } from "@/components/ChatSidebar";
-import { ModelSelector } from "@/components/ModelSelector";
+import { SessionSidebar } from "@/components/SessionSidebar";
+import { ModelSelector, models } from "@/components/ModelSelector";
 import { ModelResponseCard } from "@/components/ModelResponseCard";
-import { ConsolidatedResponse } from "@/components/ConsolidatedResponse";
-import { ChatMessage } from "@/components/ChatMessage";
+import { TransparencyInfo } from "@/components/TransparencyInfo";
 import { ChatInput } from "@/components/ChatInput";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Settings, HelpCircle } from "lucide-react";
-import { callMultipleModels, consolidateResponses, ModelResponse, Message as ApiMessage } from "@/lib/multiModelChat";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings, Menu } from "lucide-react";
+import { callMultipleModels, consolidateResponses, ModelResponse } from "@/lib/multiModelChat";
 import { useToast } from "@/hooks/use-toast";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-}
-
-const getHelpContent = () => `# How SuperLLM Works
-
-SuperLLM is a multi-model AI chat interface that leverages different AI models to give you the best responses.
-
-## Features
-
-**1. Multiple AI Models**
-Choose from:
-- **Gemini Flash** - Fast & efficient for quick queries
-- **Gemini Pro** - Most capable for complex reasoning
-- **GPT-5** - Deep reasoning and creative tasks
-
-**2. Streaming Responses**
-All responses stream in real-time for a smooth experience.
-
-**3. Simple & Clean Interface**
-Easy to use on desktop and mobile devices.
-
-## Getting Started
-
-1. Select your preferred AI model from the options above
-2. Type your question in the input box below
-3. Press Enter or click Send
-4. Watch as the AI responds in real-time!
-
-## Tips
-
-- Use **Gemini Flash** for quick answers and general queries
-- Use **Gemini Pro** for complex analysis and reasoning
-- Use **GPT-5** for creative writing and in-depth explanations
-
-Try asking me anything!`;
-
-const modelConfigs = [
-  { id: "gpt-4", name: "ChatGPT", provider: "openai" as const, color: "from-blue-500 to-cyan-500" },
-  { id: "claude-sonnet", name: "Claude", provider: "anthropic" as const, color: "from-purple-500 to-pink-500" },
-  { id: "gemini-pro", name: "Gemini", provider: "google" as const, color: "from-orange-500 to-yellow-500" },
-  { id: "custom", name: "Custom", provider: "openai" as const, color: "from-green-500 to-emerald-500" },
-];
+import {
+  loadSessions,
+  saveSessions,
+  getActiveSessionId,
+  setActiveSessionId,
+  createNewSession,
+  updateSession,
+  deleteSession,
+  renameSession,
+  exportSession,
+  generateSessionTitle,
+  ConversationSession,
+} from "@/lib/sessionManager";
+import { getConfiguredModel, getCustomModel } from "@/lib/modelDefaults";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedModels, setSelectedModels] = useState<string[]>(["gpt-4"]);
-  const [activeConversation, setActiveConversation] = useState("1");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sessions, setSessions] = useState<ConversationSession[]>([]);
+  const [activeSessionId, setActiveSessionIdState] = useState<string | null>(null);
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [enableConsolidation, setEnableConsolidation] = useState(false);
+  const [selectedConsolidator, setSelectedConsolidator] = useState("gpt-4o");
   const [modelResponses, setModelResponses] = useState<Record<string, ModelResponse>>({});
   const [loadingModels, setLoadingModels] = useState<Set<string>>(new Set());
   const [consolidatedResponse, setConsolidatedResponse] = useState<string>("");
   const [isConsolidating, setIsConsolidating] = useState(false);
-  const [selectedConsolidator, setSelectedConsolidator] = useState("gpt-4");
-  
-  const [conversations] = useState([
-    { id: "1", title: "Getting Started", timestamp: "Just now" },
-    { id: "2", title: "Previous Chat", timestamp: "1 hour ago" },
-    { id: "3", title: "Earlier Conversation", timestamp: "Yesterday" },
-  ]);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: getHelpContent(),
-      timestamp: "Just now"
+  const currentSession = sessions.find((s) => s.id === activeSessionId);
+
+  useEffect(() => {
+    const loaded = loadSessions();
+    setSessions(loaded);
+    const active = getActiveSessionId();
+    if (active && loaded.find((s) => s.id === active)) {
+      setActiveSessionIdState(active);
+    } else if (loaded.length > 0) {
+      setActiveSessionIdState(loaded[0].id);
+      setActiveSessionId(loaded[0].id);
     }
-  ]);
+  }, []);
+
+  useEffect(() => {
+    if (currentSession) {
+      setSelectedModels(currentSession.selectedModels || []);
+      setModelResponses(currentSession.modelResponses || {});
+      setConsolidatedResponse(currentSession.consolidatedResponse || "");
+    }
+  }, [activeSessionId]);
+
+  const handleNewChat = () => {
+    const newSession = createNewSession();
+    setSessions((prev) => [newSession, ...prev]);
+    setActiveSessionIdState(newSession.id);
+    setActiveSessionId(newSession.id);
+    setModelResponses({});
+    setConsolidatedResponse("");
+    setSelectedModels([]);
+  };
+
+  const handleSelectSession = (id: string) => {
+    setActiveSessionIdState(id);
+    setActiveSessionId(id);
+  };
+
+  const handleDeleteSession = (id: string) => {
+    deleteSession(id);
+    setSessions(loadSessions());
+    if (activeSessionId === id) {
+      const remaining = sessions.filter((s) => s.id !== id);
+      if (remaining.length > 0) {
+        handleSelectSession(remaining[0].id);
+      } else {
+        handleNewChat();
+      }
+    }
+  };
+
+  const handleRenameSession = (id: string, newTitle: string) => {
+    renameSession(id, newTitle);
+    setSessions(loadSessions());
+  };
+
+  const handleExportSession = (id: string) => {
+    exportSession(id);
+    toast({
+      title: "Session exported",
+      description: "Your conversation has been exported as JSON.",
+    });
+  };
 
   const handleToggleModel = (modelId: string) => {
-    setSelectedModels(prev => 
-      prev.includes(modelId) 
-        ? prev.filter(id => id !== modelId)
-        : [...prev, modelId]
+    setSelectedModels((prev) =>
+      prev.includes(modelId) ? prev.filter((id) => id !== modelId) : [...prev, modelId]
     );
+  };
+
+  const saveCurrentSession = () => {
+    if (!currentSession) return;
+    const updated: ConversationSession = {
+      ...currentSession,
+      selectedModels,
+      modelResponses,
+      consolidatedResponse,
+      timestamp: new Date().toISOString(),
+    };
+    updateSession(updated);
+    setSessions(loadSessions());
   };
 
   const handleSendMessage = async (content: string) => {
@@ -103,27 +136,68 @@ const Index = () => {
       return;
     }
 
-    const userMessage: Message = {
+    if (!currentSession) {
+      handleNewChat();
+      return;
+    }
+
+    const userMessage = {
       id: Date.now().toString(),
-      role: "user",
+      role: "user" as const,
       content,
-      timestamp: "Just now"
+      timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessages = [...currentSession.messages, userMessage];
+    const updatedSession: ConversationSession = {
+      ...currentSession,
+      messages: updatedMessages,
+      title: currentSession.messages.length === 0 ? generateSessionTitle(content) : currentSession.title,
+    };
+
+    updateSession(updatedSession);
+    setSessions(loadSessions());
     setModelResponses({});
     setConsolidatedResponse("");
-    
-    const apiMessages: ApiMessage[] = [
-      { role: "system", content: "You are a helpful AI assistant." },
-      ...messages.map(m => ({
-        role: m.role as "user" | "assistant" | "system",
-        content: m.content
-      })),
-      { role: "user", content }
-    ];
 
-    const selectedModelConfigs = modelConfigs.filter(m => selectedModels.includes(m.id));
+    const apiMessages = updatedMessages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    // Get actual model IDs to use based on configuration
+    const selectedModelConfigs = selectedModels.map((modelId) => {
+      const modelConfig = models.find((m) => m.id === modelId);
+      if (!modelConfig) return null;
+
+      const customModel = getCustomModel(modelConfig.provider);
+      const actualModelId = customModel || getConfiguredModel(modelConfig.provider);
+
+      return {
+        id: actualModelId,
+        name: modelConfig.name,
+        provider: modelConfig.provider,
+      };
+    }).filter(Boolean) as Array<{ id: string; name: string; provider: "openai" | "anthropic" | "google" }>;
+
+    // Check for missing API keys
+    const missingKeys: string[] = [];
+    selectedModelConfigs.forEach((model) => {
+      const apiKey = localStorage.getItem(`${model.provider}_api_key`);
+      if (!apiKey) {
+        missingKeys.push(model.provider.toUpperCase());
+      }
+    });
+
+    if (missingKeys.length > 0) {
+      toast({
+        title: "Missing API Keys",
+        description: `Please add API keys for: ${missingKeys.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoadingModels(new Set(selectedModels));
 
     try {
@@ -131,8 +205,8 @@ const Index = () => {
         selectedModelConfigs,
         apiMessages,
         (modelId, result) => {
-          setModelResponses(prev => ({ ...prev, [modelId]: result }));
-          setLoadingModels(prev => {
+          setModelResponses((prev) => ({ ...prev, [modelId]: result }));
+          setLoadingModels((prev) => {
             const next = new Set(prev);
             next.delete(modelId);
             return next;
@@ -140,24 +214,62 @@ const Index = () => {
         }
       );
 
-      // Auto-consolidate with selected model
-      const consolidatorConfig = modelConfigs.find(m => m.id === selectedConsolidator);
-      if (consolidatorConfig && responses.some(r => r.content)) {
-        setIsConsolidating(true);
-        try {
-          const consolidated = await consolidateResponses(responses, consolidatorConfig);
-          setConsolidatedResponse(consolidated);
-        } catch (error) {
-          console.error("Consolidation error:", error);
-          toast({
-            title: "Consolidation failed",
-            description: error instanceof Error ? error.message : "Failed to consolidate responses",
-            variant: "destructive",
-          });
-        } finally {
-          setIsConsolidating(false);
+      // Save responses to session
+      const responsesMap: Record<string, ModelResponse> = {};
+      responses.forEach((r) => {
+        responsesMap[r.modelId] = {
+          modelId: r.modelId,
+          modelName: r.modelName,
+          content: r.content,
+          error: r.error,
+        };
+      });
+
+      // Consolidate if enabled
+      if (enableConsolidation && responses.some((r) => r.content)) {
+        const consolidatorModelConfig = models.find((m) => m.id === selectedConsolidator);
+        if (consolidatorModelConfig) {
+          setIsConsolidating(true);
+          try {
+            const customModel = getCustomModel(consolidatorModelConfig.provider);
+            const actualModelId = customModel || getConfiguredModel(consolidatorModelConfig.provider);
+
+            const consolidated = await consolidateResponses(responses, {
+              id: actualModelId,
+              name: consolidatorModelConfig.name,
+              provider: consolidatorModelConfig.provider,
+            });
+
+            setConsolidatedResponse(consolidated);
+
+            // Save consolidated to session
+            const finalSession: ConversationSession = {
+              ...updatedSession,
+              modelResponses: responsesMap,
+              consolidatedResponse: consolidated,
+            };
+            updateSession(finalSession);
+          } catch (error) {
+            console.error("Consolidation error:", error);
+            toast({
+              title: "Consolidation failed",
+              description: error instanceof Error ? error.message : "Failed to consolidate responses",
+              variant: "destructive",
+            });
+          } finally {
+            setIsConsolidating(false);
+          }
         }
+      } else {
+        // Just save responses without consolidation
+        const finalSession: ConversationSession = {
+          ...updatedSession,
+          modelResponses: responsesMap,
+        };
+        updateSession(finalSession);
       }
+
+      setSessions(loadSessions());
     } catch (e) {
       console.error(e);
       toast({
@@ -168,134 +280,180 @@ const Index = () => {
     }
   };
 
-  const handleNewChat = () => {
-    setMessages([
-      {
-        id: "1",
-        role: "assistant",
-        content: getHelpContent(),
-        timestamp: "Just now"
-      }
-    ]);
-  };
-
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <div className="hidden lg:block">
-        <ChatSidebar
-          conversations={conversations}
-          activeId={activeConversation}
-          onSelect={setActiveConversation}
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      {sidebarOpen && (
+        <SessionSidebar
+          sessions={sessions}
+          activeId={activeSessionId}
+          onSelect={handleSelectSession}
           onNewChat={handleNewChat}
+          onDelete={handleDeleteSession}
+          onRename={handleRenameSession}
+          onExport={handleExportSession}
         />
-      </div>
+      )}
 
       <main className="flex-1 flex flex-col h-screen max-h-screen overflow-hidden">
-        {/* Header with Model Selector */}
-        <header className="border-b border-border/50 p-2 sm:p-3 flex-shrink-0">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm sm:text-base font-semibold">SuperLLM</h2>
-            <div className="flex gap-2">
+        {/* Header */}
+        <header className="border-b border-border bg-card/30 backdrop-blur-sm p-3 flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate("/help")}
-                title="Help"
-                className="h-8 w-8 sm:h-10 sm:w-10"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
               >
-                <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Menu className="h-5 w-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/settings")}
-                title="Settings"
-                className="h-8 w-8 sm:h-10 sm:w-10"
-              >
-                <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
+              <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Blend Speak AI
+              </h2>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/settings")}
+              title="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
           </div>
-          <ModelSelector 
-            selectedModels={selectedModels} 
-            onToggle={handleToggleModel}
-          />
         </header>
 
-        {/* Messages Area */}
-        <ScrollArea className="flex-1 p-2 sm:p-3">
-          <div className="max-w-6xl mx-auto space-y-3">
-            {messages.map((message) => (
-              <div key={message.id} className="text-xs sm:text-sm">
-                <ChatMessage
-                  role={message.role}
-                  content={message.content}
-                  timestamp={message.timestamp}
-                />
-              </div>
-            ))}
+        {/* Top Section: Input */}
+        <div className="border-b border-border bg-card/20 backdrop-blur-sm p-4 flex-shrink-0">
+          <div className="max-w-4xl mx-auto">
+            <ChatInput
+              onSend={handleSendMessage}
+              disabled={loadingModels.size > 0 || isConsolidating}
+            />
+          </div>
+        </div>
+
+        {/* Middle Section: Model Selector + Consolidation Control */}
+        <div className="border-b border-border bg-card/10 backdrop-blur-sm p-4 flex-shrink-0">
+          <div className="max-w-4xl mx-auto space-y-3">
+            <ModelSelector selectedModels={selectedModels} onToggle={handleToggleModel} />
             
-            {/* Model Responses */}
-            {Object.keys(modelResponses).length > 0 && (
-              <div className="space-y-6">
-                {/* Consolidated Response */}
-                <ConsolidatedResponse
-                  consolidatedResponse={consolidatedResponse}
-                  isConsolidating={isConsolidating}
-                  selectedConsolidator={selectedConsolidator}
-                  onConsolidatorChange={setSelectedConsolidator}
-                  availableModels={modelConfigs.filter(m => selectedModels.includes(m.id))}
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="consolidate"
+                  checked={enableConsolidation}
+                  onCheckedChange={(checked) => setEnableConsolidation(checked as boolean)}
                 />
-                
-                {/* Individual Model Responses */}
-                <div>
-                  <h3 className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-2">
-                    Individual Responses
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[200px]">
-                    {selectedModels.map(modelId => {
-                      const config = modelConfigs.find(m => m.id === modelId);
-                      const response = modelResponses[modelId];
-                      const isLoading = loadingModels.has(modelId);
-                      
-                      return (
-                        <ModelResponseCard
-                          key={modelId}
-                          modelName={config?.name || modelId}
-                          response={response?.content}
-                          isLoading={isLoading}
-                          error={response?.error}
-                          color={config?.color || "from-gray-500 to-gray-700"}
-                        />
-                      );
-                    })}
-                  </div>
+                <Label htmlFor="consolidate" className="text-sm cursor-pointer">
+                  Consolidate responses using
+                </Label>
+              </div>
+              {enableConsolidation && (
+                <Select value={selectedConsolidator} onValueChange={setSelectedConsolidator}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            <TransparencyInfo />
+          </div>
+        </div>
+
+        {/* Bottom Section: Outputs */}
+        <ScrollArea className="flex-1 p-4">
+          <div className="max-w-4xl mx-auto space-y-4">
+            {/* Consolidated Response */}
+            {(isConsolidating || consolidatedResponse) && (
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">
+                      Consolidated Response
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isConsolidating ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                      <Skeleton className="h-4 w-4/6" />
+                    </div>
+                  ) : (
+                    <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                      {consolidatedResponse}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Individual Model Responses */}
+            {Object.keys(modelResponses).length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground">
+                  Individual Model Responses
+                </h3>
+                <div className="space-y-3">
+                  {selectedModels.map((modelId) => {
+                    const config = models.find((m) => m.id === modelId);
+                    const response = modelResponses[modelId];
+                    const isLoading = loadingModels.has(modelId);
+
+                    return (
+                      <ModelResponseCard
+                        key={modelId}
+                        modelName={config?.name || modelId}
+                        response={response?.content}
+                        isLoading={isLoading}
+                        error={response?.error}
+                        color={config?.color || "from-gray-500 to-gray-700"}
+                      />
+                    );
+                  })}
                 </div>
+              </div>
+            )}
+
+            {/* Chat History */}
+            {currentSession && currentSession.messages.length > 0 && (
+              <div className="space-y-3 pt-4 border-t border-border">
+                <h3 className="text-sm font-semibold text-muted-foreground">Conversation History</h3>
+                {currentSession.messages.map((msg) => (
+                  <Card key={msg.id} className={msg.role === "user" ? "bg-secondary/30" : "bg-card/50"}>
+                    <CardContent className="p-3">
+                      <p className="text-xs text-muted-foreground mb-1 capitalize">{msg.role}</p>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </div>
         </ScrollArea>
 
-        {/* Input Area */}
-        <div className="border-t border-border/50 p-2 sm:p-3 flex-shrink-0">
-          <div className="max-w-6xl mx-auto space-y-1 sm:space-y-2">
-            <ChatInput 
-              onSend={handleSendMessage} 
-              disabled={loadingModels.size > 0 || isConsolidating} 
-            />
-            <div className="text-center">
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                Crafted by <a 
-                  href="https://www.linkedin.com/in/pradeep-kumars/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline transition-colors"
-                >
-                  Pradeep
-                </a> • Assisted by LLMs
-              </p>
-            </div>
-          </div>
+        {/* Footer */}
+        <div className="border-t border-border p-2 flex-shrink-0 bg-card/20">
+          <p className="text-center text-xs text-muted-foreground">
+            Crafted by{" "}
+            <a
+              href="https://www.linkedin.com/in/pradeep-kumars/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Pradeep
+            </a>{" "}
+            • Assisted by LLMs
+          </p>
         </div>
       </main>
     </div>

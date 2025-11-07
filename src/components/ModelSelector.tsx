@@ -1,4 +1,4 @@
-import { Brain, Zap, Sparkles, MessageSquare } from "lucide-react";
+import { Brain, Sparkles, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -14,36 +14,60 @@ interface Model {
 
 const models: Model[] = [
   {
-    id: "gpt-4",
-    name: "ChatGPT",
-    description: "GPT-4",
+    id: "gpt-4o",
+    name: "GPT-4o",
+    description: "OpenAI",
     icon: Sparkles,
     color: "from-blue-500 to-cyan-500",
     provider: "openai"
   },
   {
-    id: "claude-sonnet",
-    name: "Claude",
-    description: "Sonnet 3.5",
+    id: "gpt-4-turbo",
+    name: "GPT-4 Turbo",
+    description: "OpenAI",
+    icon: Sparkles,
+    color: "from-blue-600 to-cyan-600",
+    provider: "openai"
+  },
+  {
+    id: "claude-sonnet-4-5",
+    name: "Claude 3.5 Sonnet",
+    description: "Anthropic",
     icon: MessageSquare,
     color: "from-purple-500 to-pink-500",
     provider: "anthropic"
   },
   {
-    id: "gemini-pro",
-    name: "Gemini",
-    description: "Pro 1.5",
+    id: "claude-3-opus-20240229",
+    name: "Claude 3 Opus",
+    description: "Anthropic",
+    icon: MessageSquare,
+    color: "from-purple-600 to-pink-600",
+    provider: "anthropic"
+  },
+  {
+    id: "claude-3-haiku-20240307",
+    name: "Claude 3 Haiku",
+    description: "Anthropic",
+    icon: MessageSquare,
+    color: "from-purple-400 to-pink-400",
+    provider: "anthropic"
+  },
+  {
+    id: "gemini-1.5-pro",
+    name: "Gemini 1.5 Pro",
+    description: "Google",
     icon: Brain,
     color: "from-orange-500 to-yellow-500",
     provider: "google"
   },
   {
-    id: "custom",
-    name: "Custom",
-    description: "Your model",
-    icon: Zap,
-    color: "from-green-500 to-emerald-500",
-    provider: "openai"
+    id: "gemini-1.5-flash",
+    name: "Gemini 1.5 Flash",
+    description: "Google",
+    icon: Brain,
+    color: "from-orange-400 to-yellow-400",
+    provider: "google"
   }
 ];
 
