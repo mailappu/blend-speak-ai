@@ -12,7 +12,7 @@ export interface ConversationSession {
   title: string;
   timestamp: string;
   messages: SessionMessage[];
-  selectedModels: string[];
+  selectedProviders: ("openai" | "anthropic" | "google")[];
   modelResponses?: Record<string, ModelResponse>;
   consolidatedResponse?: string;
 }
@@ -47,7 +47,7 @@ export const createNewSession = (): ConversationSession => {
     title: "New Conversation",
     timestamp: new Date().toISOString(),
     messages: [],
-    selectedModels: [],
+    selectedProviders: [],
   };
 };
 

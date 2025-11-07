@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Menu } from "lucide-react";
+import { Settings, Menu, HelpCircle } from "lucide-react";
 import { callMultipleModels, consolidateResponses, ModelResponse } from "@/lib/multiModelChat";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -36,9 +36,9 @@ const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sessions, setSessions] = useState<ConversationSession[]>([]);
   const [activeSessionId, setActiveSessionIdState] = useState<string | null>(null);
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [selectedProviders, setSelectedProviders] = useState<("openai" | "anthropic" | "google")[]>([]);
   const [enableConsolidation, setEnableConsolidation] = useState(false);
-  const [selectedConsolidator, setSelectedConsolidator] = useState("gpt-4o");
+  const [selectedConsolidator, setSelectedConsolidator] = useState<"openai" | "anthropic" | "google">("openai");
   const [modelResponses, setModelResponses] = useState<Record<string, ModelResponse>>({});
   const [loadingModels, setLoadingModels] = useState<Set<string>>(new Set());
   const [consolidatedResponse, setConsolidatedResponse] = useState<string>("");
@@ -60,7 +60,7 @@ const Index = () => {
 
   useEffect(() => {
     if (currentSession) {
-      setSelectedModels(currentSession.selectedModels || []);
+      setSelectedProviders(currentSession.selectedProviders || []);
       setModelResponses(currentSession.modelResponses || {});
       setConsolidatedResponse(currentSession.consolidatedResponse || "");
     }
@@ -73,7 +73,7 @@ const Index = () => {
     setActiveSessionId(newSession.id);
     setModelResponses({});
     setConsolidatedResponse("");
-    setSelectedModels([]);
+    setSelectedProviders([]);
   };
 
   const handleSelectSession = (id: string) => {
@@ -107,9 +107,9 @@ const Index = () => {
     });
   };
 
-  const handleToggleModel = (modelId: string) => {
-    setSelectedModels((prev) =>
-      prev.includes(modelId) ? prev.filter((id) => id !== modelId) : [...prev, modelId]
+  const handleToggleProvider = (provider: "openai" | "anthropic" | "google") => {
+    setSelectedProviders((prev) =>
+      prev.includes(provider) ? prev.filter((p) => p !== provider) : [...prev, provider]
     );
   };
 
@@ -117,7 +117,7 @@ const Index = () => {
     if (!currentSession) return;
     const updated: ConversationSession = {
       ...currentSession,
-      selectedModels,
+      selectedProviders,
       modelResponses,
       consolidatedResponse,
       timestamp: new Date().toISOString(),
@@ -127,10 +127,10 @@ const Index = () => {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (selectedModels.length === 0) {
+    if (selectedProviders.length === 0) {
       toast({
-        title: "No models selected",
-        description: "Please select at least one AI model",
+        title: "No providers selected",
+        description: "Please select at least one AI provider",
         variant: "destructive",
       });
       return;
@@ -166,19 +166,17 @@ const Index = () => {
     }));
 
     // Get actual model IDs to use based on configuration
-    const selectedModelConfigs = selectedModels.map((modelId) => {
-      const modelConfig = models.find((m) => m.id === modelId);
-      if (!modelConfig) return null;
-
-      const customModel = getCustomModel(modelConfig.provider);
-      const actualModelId = customModel || getConfiguredModel(modelConfig.provider);
+    const selectedModelConfigs = selectedProviders.map((provider) => {
+      const customModel = getCustomModel(provider);
+      const actualModelId = customModel || getConfiguredModel(provider);
+      const providerName = provider === "openai" ? "OpenAI" : provider === "anthropic" ? "Claude" : "Gemini";
 
       return {
         id: actualModelId,
-        name: modelConfig.name,
-        provider: modelConfig.provider,
+        name: providerName,
+        provider: provider,
       };
-    }).filter(Boolean) as Array<{ id: string; name: string; provider: "openai" | "anthropic" | "google" }>;
+    });
 
     // Check for missing API keys
     const missingKeys: string[] = [];
@@ -198,7 +196,7 @@ const Index = () => {
       return;
     }
 
-    setLoadingModels(new Set(selectedModels));
+    setLoadingModels(new Set(selectedProviders));
 
     try {
       const responses = await callMultipleModels(
@@ -227,38 +225,36 @@ const Index = () => {
 
       // Consolidate if enabled
       if (enableConsolidation && responses.some((r) => r.content)) {
-        const consolidatorModelConfig = models.find((m) => m.id === selectedConsolidator);
-        if (consolidatorModelConfig) {
-          setIsConsolidating(true);
-          try {
-            const customModel = getCustomModel(consolidatorModelConfig.provider);
-            const actualModelId = customModel || getConfiguredModel(consolidatorModelConfig.provider);
+        setIsConsolidating(true);
+        try {
+          const customModel = getCustomModel(selectedConsolidator);
+          const actualModelId = customModel || getConfiguredModel(selectedConsolidator);
+          const providerName = selectedConsolidator === "openai" ? "OpenAI" : selectedConsolidator === "anthropic" ? "Claude" : "Gemini";
 
-            const consolidated = await consolidateResponses(responses, {
-              id: actualModelId,
-              name: consolidatorModelConfig.name,
-              provider: consolidatorModelConfig.provider,
-            });
+          const consolidated = await consolidateResponses(responses, {
+            id: actualModelId,
+            name: providerName,
+            provider: selectedConsolidator,
+          });
 
-            setConsolidatedResponse(consolidated);
+          setConsolidatedResponse(consolidated);
 
-            // Save consolidated to session
-            const finalSession: ConversationSession = {
-              ...updatedSession,
-              modelResponses: responsesMap,
-              consolidatedResponse: consolidated,
-            };
-            updateSession(finalSession);
-          } catch (error) {
-            console.error("Consolidation error:", error);
-            toast({
-              title: "Consolidation failed",
-              description: error instanceof Error ? error.message : "Failed to consolidate responses",
-              variant: "destructive",
-            });
-          } finally {
-            setIsConsolidating(false);
-          }
+          // Save consolidated to session
+          const finalSession: ConversationSession = {
+            ...updatedSession,
+            modelResponses: responsesMap,
+            consolidatedResponse: consolidated,
+          };
+          updateSession(finalSession);
+        } catch (error) {
+          console.error("Consolidation error:", error);
+          toast({
+            title: "Consolidation failed",
+            description: error instanceof Error ? error.message : "Failed to consolidate responses",
+            variant: "destructive",
+          });
+        } finally {
+          setIsConsolidating(false);
         }
       } else {
         // Just save responses without consolidation
@@ -307,17 +303,27 @@ const Index = () => {
                 <Menu className="h-5 w-5" />
               </Button>
               <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Blend Speak AI
+                Super LLM
               </h2>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/settings")}
-              title="Settings"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/help")}
+                title="Help"
+              >
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/settings")}
+                title="Settings"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -331,10 +337,10 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Middle Section: Model Selector + Consolidation Control */}
+        {/* Middle Section: Provider Selector + Consolidation Control */}
         <div className="border-b border-border bg-card/10 backdrop-blur-sm p-4 flex-shrink-0">
           <div className="max-w-4xl mx-auto space-y-3">
-            <ModelSelector selectedModels={selectedModels} onToggle={handleToggleModel} />
+            <ModelSelector selectedProviders={selectedProviders} onToggle={handleToggleProvider} />
             
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
@@ -348,16 +354,14 @@ const Index = () => {
                 </Label>
               </div>
               {enableConsolidation && (
-                <Select value={selectedConsolidator} onValueChange={setSelectedConsolidator}>
-                  <SelectTrigger className="w-48">
+                <Select value={selectedConsolidator} onValueChange={(value) => setSelectedConsolidator(value as "openai" | "anthropic" | "google")}>
+                  <SelectTrigger className="w-[180px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {models.map((model) => (
-                      <SelectItem key={model.id} value={model.id}>
-                        {model.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="openai">OpenAI</SelectItem>
+                    <SelectItem value="anthropic">Claude</SelectItem>
+                    <SelectItem value="google">Gemini</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -403,19 +407,20 @@ const Index = () => {
                   Individual Model Responses
                 </h3>
                 <div className="space-y-3">
-                  {selectedModels.map((modelId) => {
-                    const config = models.find((m) => m.id === modelId);
-                    const response = modelResponses[modelId];
-                    const isLoading = loadingModels.has(modelId);
+                  {selectedProviders.map((provider) => {
+                    const response = modelResponses[provider];
+                    const isLoading = loadingModels.has(provider);
+                    const providerName = provider === "openai" ? "OpenAI" : provider === "anthropic" ? "Claude" : "Gemini";
+                    const color = provider === "openai" ? "from-blue-500 to-cyan-500" : provider === "anthropic" ? "from-purple-500 to-pink-500" : "from-orange-500 to-yellow-500";
 
                     return (
                       <ModelResponseCard
-                        key={modelId}
-                        modelName={config?.name || modelId}
+                        key={provider}
+                        modelName={providerName}
                         response={response?.content}
                         isLoading={isLoading}
                         error={response?.error}
-                        color={config?.color || "from-gray-500 to-gray-700"}
+                        color={color}
                       />
                     );
                   })}

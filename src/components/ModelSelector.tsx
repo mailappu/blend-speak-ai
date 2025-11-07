@@ -12,7 +12,8 @@ interface Model {
   provider: "openai" | "anthropic" | "google";
 }
 
-const models: Model[] = [
+// All available models (used in Settings)
+export const models: Model[] = [
   {
     id: "gpt-4o",
     name: "GPT-4o",
@@ -71,50 +72,83 @@ const models: Model[] = [
   }
 ];
 
-interface ModelSelectorProps {
-  selectedModels: string[];
-  onToggle: (modelId: string) => void;
+// Provider options for home page selector
+interface Provider {
+  id: "openai" | "anthropic" | "google";
+  name: string;
+  description: string;
+  icon: typeof Brain;
+  color: string;
 }
 
-export const ModelSelector = ({ selectedModels, onToggle }: ModelSelectorProps) => {
+const providers: Provider[] = [
+  {
+    id: "openai",
+    name: "OpenAI",
+    description: "GPT Models",
+    icon: Sparkles,
+    color: "from-blue-500 to-cyan-500"
+  },
+  {
+    id: "anthropic",
+    name: "Claude",
+    description: "Anthropic",
+    icon: MessageSquare,
+    color: "from-purple-500 to-pink-500"
+  },
+  {
+    id: "google",
+    name: "Gemini",
+    description: "Google",
+    icon: Brain,
+    color: "from-orange-500 to-yellow-500"
+  }
+];
+
+interface ModelSelectorProps {
+  selectedProviders: ("openai" | "anthropic" | "google")[];
+  onToggle: (provider: "openai" | "anthropic" | "google") => void;
+}
+
+export const ModelSelector = ({ selectedProviders, onToggle }: ModelSelectorProps) => {
   return (
     <div className="space-y-3">
       <h3 className="text-xs font-semibold text-muted-foreground px-2">
-        Select AI Models
+        Select AI Providers
       </h3>
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {models.map((model) => {
-          const Icon = model.icon;
-          const isSelected = selectedModels.includes(model.id);
+        {providers.map((provider) => {
+          const Icon = provider.icon;
+          const isSelected = selectedProviders.includes(provider.id);
       
           return (
-            <div key={model.id} className="flex-shrink-0">
+            <div key={provider.id} className="flex-shrink-0">
               <Label
-                htmlFor={model.id}
+                htmlFor={provider.id}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all cursor-pointer whitespace-nowrap",
+                  "flex items-center gap-2 px-4 py-3 rounded-lg transition-all cursor-pointer whitespace-nowrap",
                   "hover:scale-105 active:scale-95 border",
                   isSelected 
-                    ? "bg-gradient-to-br " + model.color + " border-transparent shadow-md text-white" 
+                    ? "bg-gradient-to-br " + provider.color + " border-transparent shadow-md text-white" 
                     : "bg-secondary/30 border-border hover:bg-secondary/50"
                 )}
               >
                 <Checkbox
-                  id={model.id}
+                  id={provider.id}
                   checked={isSelected}
-                  onCheckedChange={() => onToggle(model.id)}
+                  onCheckedChange={() => onToggle(provider.id)}
                   className={cn(
                     "border-2",
                     isSelected ? "border-white data-[state=checked]:bg-white data-[state=checked]:text-primary" : "border-muted-foreground"
                   )}
                 />
-                <Icon className={cn("h-4 w-4", isSelected ? "text-white" : "text-primary")} />
+                <Icon className={cn("h-5 w-5", isSelected ? "text-white" : "text-primary")} />
                 <div className="flex flex-col">
-                  <span className={cn("text-xs font-semibold", isSelected ? "text-white" : "text-foreground")}>
-                    {model.name}
+                  <span className={cn("text-sm font-semibold", isSelected ? "text-white" : "text-foreground")}>
+                    {provider.name}
                   </span>
-                  <span className={cn("text-[10px]", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                    {model.description}
+                  <span className={cn("text-xs", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                    {provider.description}
                   </span>
                 </div>
               </Label>
@@ -125,5 +159,3 @@ export const ModelSelector = ({ selectedModels, onToggle }: ModelSelectorProps) 
     </div>
   );
 };
-
-export { models };
