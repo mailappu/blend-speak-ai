@@ -44,25 +44,28 @@ const callModel = async (
 export const callMultipleModels = async (
   selectedModels: Array<{ id: string; name: string; provider: ModelProvider }>,
   messages: Message[],
-  onProgress: (modelId: string, result: ModelResponse) => void
+  onProgress: (provider: ModelProvider, result: ModelResponse) => void
 ): Promise<ModelResponse[]> => {
   const promises = selectedModels.map(async (model) => {
     try {
+      console.log(`Calling ${model.provider} with model ${model.id}...`);
       const content = await callModel(model.provider, model.id, messages);
       const result: ModelResponse = {
         modelId: model.id,
         modelName: model.name,
         content,
       };
-      onProgress(model.id, result);
+      console.log(`${model.provider} response received:`, content?.substring(0, 100));
+      onProgress(model.provider, result);
       return result;
     } catch (error) {
+      console.error(`${model.provider} error:`, error);
       const result: ModelResponse = {
         modelId: model.id,
         modelName: model.name,
         error: error instanceof Error ? error.message : "Unknown error",
       };
-      onProgress(model.id, result);
+      onProgress(model.provider, result);
       return result;
     }
   });

@@ -199,28 +199,32 @@ const Index = () => {
 
     setLoadingModels(new Set(selectedProviders));
 
+    console.log("Sending message to models:", selectedProviders);
+    
     try {
       const responses = await callMultipleModels(
         selectedModelConfigs,
         apiMessages,
-        (modelId, result) => {
-          setModelResponses((prev) => ({ ...prev, [modelId]: result }));
+        (provider, result) => {
+          console.log(`Response from ${provider}:`, result);
+          setModelResponses((prev) => ({ ...prev, [provider]: result }));
           setLoadingModels((prev) => {
             const next = new Set(prev);
-            next.delete(modelId);
+            next.delete(provider);
             return next;
           });
         }
       );
 
-      // Save responses to session
+      // Save responses to session (indexed by provider)
       const responsesMap: Record<string, ModelResponse> = {};
-      responses.forEach((r) => {
-        responsesMap[r.modelId] = {
-          modelId: r.modelId,
-          modelName: r.modelName,
-          content: r.content,
-          error: r.error,
+      selectedModelConfigs.forEach((config, index) => {
+        const response = responses[index];
+        responsesMap[config.provider] = {
+          modelId: response.modelId,
+          modelName: response.modelName,
+          content: response.content,
+          error: response.error,
         };
       });
 
