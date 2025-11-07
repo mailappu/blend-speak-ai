@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.chat-google]
 verify_jwt = false
+
+[functions.proxy]
+verify_jwt = false
