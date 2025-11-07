@@ -44,47 +44,47 @@ export const ModelResponseCard = ({
 
   return (
     <Card className="glass-card h-full flex flex-col">
-      <CardHeader className="pb-2 flex-shrink-0">
-        <CardTitle className="flex items-center justify-between text-sm">
-          <span className={cn("bg-gradient-to-br bg-clip-text text-transparent", color)}>
+      <CardHeader className="p-2 sm:p-3 md:pb-2 flex-shrink-0">
+        <CardTitle className="flex items-center justify-between text-xs sm:text-sm">
+          <span className={cn("bg-gradient-to-br bg-clip-text text-transparent font-semibold", color)}>
             {modelName}
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {!isLoading && response && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7"
+                className="h-6 w-6 sm:h-7 sm:w-7 touch-manipulation"
                 onClick={handleCopy}
               >
                 {copied ? (
-                  <Check className="h-3 w-3 text-accent" />
+                  <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-accent" />
                 ) : (
-                  <Copy className="h-3 w-3" />
+                  <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                 )}
               </Button>
             )}
             {!isLoading && (
               error ? (
-                <XCircle className="h-4 w-4 text-destructive" />
+                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" />
               ) : response ? (
-                <CheckCircle2 className="h-4 w-4 text-accent" />
+                <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-accent" />
               ) : null
             )}
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-auto">
+      <CardContent className="flex-1 overflow-auto p-2 sm:p-3 md:p-4">
         {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-full bg-muted" />
-            <Skeleton className="h-3 w-5/6 bg-muted" />
-            <Skeleton className="h-3 w-4/6 bg-muted" />
+          <div className="space-y-1.5 sm:space-y-2">
+            <Skeleton className="h-2.5 sm:h-3 w-full bg-muted" />
+            <Skeleton className="h-2.5 sm:h-3 w-5/6 bg-muted" />
+            <Skeleton className="h-2.5 sm:h-3 w-4/6 bg-muted" />
           </div>
         ) : error ? (
-          <p className="text-xs text-destructive">{error}</p>
+          <p className="text-[10px] sm:text-xs text-destructive">{error}</p>
         ) : (
-          <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
+          <p className="text-[10px] sm:text-xs md:text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed max-w-prose">
             {response}
           </p>
         )}

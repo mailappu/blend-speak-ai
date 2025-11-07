@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Menu, HelpCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { callMultipleModels, consolidateResponses, ModelResponse } from "@/lib/multiModelChat";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -278,58 +279,74 @@ const Index = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* Mobile/Tablet Sidebar Overlay */}
       {sidebarOpen && (
-        <SessionSidebar
-          sessions={sessions}
-          activeId={activeSessionId}
-          onSelect={handleSelectSession}
-          onNewChat={handleNewChat}
-          onDelete={handleDeleteSession}
-          onRename={handleRenameSession}
-          onExport={handleExportSession}
-        />
+        <>
+          <div 
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className={cn(
+            "fixed inset-y-0 left-0 z-50 lg:relative lg:z-0",
+            "transition-transform duration-300 ease-in-out",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          )}>
+            <SessionSidebar
+              sessions={sessions}
+              activeId={activeSessionId}
+              onSelect={handleSelectSession}
+              onNewChat={handleNewChat}
+              onDelete={handleDeleteSession}
+              onRename={handleRenameSession}
+              onExport={handleExportSession}
+            />
+          </div>
+        </>
       )}
 
-      <main className="flex-1 flex flex-col h-screen max-h-screen overflow-hidden">
+      <main className="flex-1 flex flex-col h-screen max-h-screen overflow-hidden w-full">
         {/* Header */}
-        <header className="border-b border-border bg-card/30 backdrop-blur-sm p-3 flex-shrink-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
+        <header className="border-b border-border bg-card/30 backdrop-blur-sm px-3 py-2 sm:p-3 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="h-8 w-8 sm:h-10 sm:w-10"
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-              <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Super LLM
               </h2>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/help")}
                 title="Help"
+                className="h-8 w-8 sm:h-10 sm:w-10"
               >
-                <HelpCircle className="h-5 w-5" />
+                <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/settings")}
                 title="Settings"
+                className="h-8 w-8 sm:h-10 sm:w-10"
               >
-                <Settings className="h-5 w-5" />
+                <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
         </header>
 
         {/* Top Section: Input */}
-        <div className="border-b border-border bg-card/20 backdrop-blur-sm p-4 flex-shrink-0">
-          <div className="max-w-4xl mx-auto">
+        <div className="border-b border-border bg-card/20 backdrop-blur-sm px-3 py-3 sm:p-4 md:p-5 flex-shrink-0">
+          <div className="max-w-4xl mx-auto w-full">
             <ChatInput
               onSend={handleSendMessage}
               disabled={loadingModels.size > 0 || isConsolidating}
@@ -338,24 +355,24 @@ const Index = () => {
         </div>
 
         {/* Middle Section: Provider Selector + Consolidation Control */}
-        <div className="border-b border-border bg-card/10 backdrop-blur-sm p-4 flex-shrink-0">
-          <div className="max-w-4xl mx-auto space-y-3">
+        <div className="border-b border-border bg-card/10 backdrop-blur-sm px-3 py-3 sm:p-4 md:p-5 flex-shrink-0">
+          <div className="max-w-4xl mx-auto w-full space-y-3 sm:space-y-4">
             <ModelSelector selectedProviders={selectedProviders} onToggle={handleToggleProvider} />
             
-            <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="consolidate"
                   checked={enableConsolidation}
                   onCheckedChange={(checked) => setEnableConsolidation(checked as boolean)}
                 />
-                <Label htmlFor="consolidate" className="text-sm cursor-pointer">
-                  Consolidate responses using
+                <Label htmlFor="consolidate" className="text-xs sm:text-sm cursor-pointer">
+                  Consolidate responses
                 </Label>
               </div>
               {enableConsolidation && (
                 <Select value={selectedConsolidator} onValueChange={(value) => setSelectedConsolidator(value as "openai" | "anthropic" | "google")}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] text-xs sm:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -372,27 +389,27 @@ const Index = () => {
         </div>
 
         {/* Bottom Section: Outputs */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="max-w-4xl mx-auto space-y-4">
+        <ScrollArea className="flex-1 px-3 py-4 sm:p-4 md:p-6">
+          <div className="max-w-4xl mx-auto w-full space-y-3 sm:space-y-4 md:space-y-5">
             {/* Consolidated Response */}
             {(isConsolidating || consolidatedResponse) && (
               <Card className="glass-card">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
+                <CardHeader className="p-3 sm:p-4 md:p-6">
+                  <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
                     <span className="bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">
                       Consolidated Response
                     </span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
                   {isConsolidating ? (
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-5/6" />
-                      <Skeleton className="h-4 w-4/6" />
+                      <Skeleton className="h-3 sm:h-4 w-full" />
+                      <Skeleton className="h-3 sm:h-4 w-5/6" />
+                      <Skeleton className="h-3 sm:h-4 w-4/6" />
                     </div>
                   ) : (
-                    <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-xs sm:text-sm md:text-base text-foreground/90 whitespace-pre-wrap leading-relaxed max-w-prose">
                       {consolidatedResponse}
                     </p>
                   )}
@@ -402,11 +419,11 @@ const Index = () => {
 
             {/* Individual Model Responses */}
             {Object.keys(modelResponses).length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground">
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground px-1">
                   Individual Model Responses
                 </h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {selectedProviders.map((provider) => {
                     const response = modelResponses[provider];
                     const isLoading = loadingModels.has(provider);
@@ -430,24 +447,26 @@ const Index = () => {
 
             {/* Chat History */}
             {currentSession && currentSession.messages.length > 0 && (
-              <div className="space-y-3 pt-4 border-t border-border">
-                <h3 className="text-sm font-semibold text-muted-foreground">Conversation History</h3>
-                {currentSession.messages.map((msg) => (
-                  <Card key={msg.id} className={msg.role === "user" ? "bg-secondary/30" : "bg-card/50"}>
-                    <CardContent className="p-3">
-                      <p className="text-xs text-muted-foreground mb-1 capitalize">{msg.role}</p>
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-4 border-t border-border">
+                <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground px-1">Conversation History</h3>
+                <div className="space-y-2 sm:space-y-3">
+                  {currentSession.messages.map((msg) => (
+                    <Card key={msg.id} className={msg.role === "user" ? "bg-secondary/30" : "bg-card/50"}>
+                      <CardContent className="p-2 sm:p-3 md:p-4">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 capitalize font-medium">{msg.role}</p>
+                        <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed max-w-prose">{msg.content}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         </ScrollArea>
 
         {/* Footer */}
-        <div className="border-t border-border p-2 flex-shrink-0 bg-card/20">
-          <p className="text-center text-xs text-muted-foreground">
+        <div className="border-t border-border px-2 py-2 sm:p-3 flex-shrink-0 bg-card/20">
+          <p className="text-center text-[10px] sm:text-xs text-muted-foreground">
             Crafted by{" "}
             <a
               href="https://www.linkedin.com/in/pradeep-kumars/"

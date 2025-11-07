@@ -112,11 +112,11 @@ interface ModelSelectorProps {
 
 export const ModelSelector = ({ selectedProviders, onToggle }: ModelSelectorProps) => {
   return (
-    <div className="space-y-3">
-      <h3 className="text-xs font-semibold text-muted-foreground px-2">
+    <div className="space-y-2 sm:space-y-3">
+      <h3 className="text-[10px] sm:text-xs font-semibold text-muted-foreground px-1 sm:px-2">
         Select AI Providers
       </h3>
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
         {providers.map((provider) => {
           const Icon = provider.icon;
           const isSelected = selectedProviders.includes(provider.id);
@@ -126,8 +126,9 @@ export const ModelSelector = ({ selectedProviders, onToggle }: ModelSelectorProp
               <Label
                 htmlFor={provider.id}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-3 rounded-lg transition-all cursor-pointer whitespace-nowrap",
-                  "hover:scale-105 active:scale-95 border",
+                  "flex items-center gap-1.5 sm:gap-2 px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3",
+                  "rounded-md sm:rounded-lg transition-all cursor-pointer whitespace-nowrap",
+                  "hover:scale-105 active:scale-95 border touch-manipulation",
                   isSelected 
                     ? "bg-gradient-to-br " + provider.color + " border-transparent shadow-md text-white" 
                     : "bg-secondary/30 border-border hover:bg-secondary/50"
@@ -138,16 +139,16 @@ export const ModelSelector = ({ selectedProviders, onToggle }: ModelSelectorProp
                   checked={isSelected}
                   onCheckedChange={() => onToggle(provider.id)}
                   className={cn(
-                    "border-2",
+                    "border-2 h-3.5 w-3.5 sm:h-4 sm:w-4",
                     isSelected ? "border-white data-[state=checked]:bg-white data-[state=checked]:text-primary" : "border-muted-foreground"
                   )}
                 />
-                <Icon className={cn("h-5 w-5", isSelected ? "text-white" : "text-primary")} />
+                <Icon className={cn("h-4 w-4 sm:h-5 sm:w-5", isSelected ? "text-white" : "text-primary")} />
                 <div className="flex flex-col">
-                  <span className={cn("text-sm font-semibold", isSelected ? "text-white" : "text-foreground")}>
+                  <span className={cn("text-xs sm:text-sm font-semibold leading-tight", isSelected ? "text-white" : "text-foreground")}>
                     {provider.name}
                   </span>
-                  <span className={cn("text-xs", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                  <span className={cn("text-[10px] sm:text-xs leading-tight", isSelected ? "text-white/80" : "text-muted-foreground")}>
                     {provider.description}
                   </span>
                 </div>

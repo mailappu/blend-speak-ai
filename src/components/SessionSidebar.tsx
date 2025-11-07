@@ -46,28 +46,28 @@ export const SessionSidebar = ({
   };
 
   return (
-    <div className="w-64 border-r border-border bg-sidebar flex flex-col h-full">
-      <div className="p-3 border-b border-border">
+    <div className="w-56 sm:w-64 md:w-72 border-r border-border bg-sidebar flex flex-col h-full shadow-lg lg:shadow-none">
+      <div className="p-2 sm:p-3 border-b border-border">
         <Button onClick={onNewChat} className="w-full" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          New Chat
+          <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+          <span className="text-xs sm:text-sm">New Chat</span>
         </Button>
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
+        <div className="p-1.5 sm:p-2 space-y-1">
           {sessions.map((session) => (
             <div
               key={session.id}
               className={cn(
-                "group rounded-lg p-2 transition-colors",
+                "group rounded-md sm:rounded-lg p-1.5 sm:p-2 transition-colors",
                 activeId === session.id
                   ? "bg-sidebar-accent"
                   : "hover:bg-sidebar-accent/50"
               )}
             >
               {editingId === session.id ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 sm:gap-1">
                   <Input
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
@@ -75,63 +75,68 @@ export const SessionSidebar = ({
                       if (e.key === "Enter") saveEdit();
                       if (e.key === "Escape") cancelEdit();
                     }}
-                    className="h-7 text-xs"
+                    className="h-6 sm:h-7 text-[10px] sm:text-xs"
                     autoFocus
                   />
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 flex-shrink-0"
+                    className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0"
                     onClick={saveEdit}
                   >
-                    <Check className="h-3 w-3" />
+                    <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 flex-shrink-0"
+                    className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0"
                     onClick={cancelEdit}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </Button>
                 </div>
               ) : (
                 <>
                   <div
-                    className="cursor-pointer"
+                    className="cursor-pointer touch-manipulation"
                     onClick={() => onSelect(session.id)}
                   >
-                    <h3 className="text-sm font-medium truncate">
+                    <h3 className="text-xs sm:text-sm font-medium truncate leading-tight">
                       {session.title}
                     </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(session.timestamp).toLocaleString()}
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                      {new Date(session.timestamp).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </p>
                   </div>
-                  <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-0.5 sm:gap-1 mt-1.5 sm:mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
+                      className="h-5 w-5 sm:h-6 sm:w-6 touch-manipulation"
                       onClick={() => startEdit(session)}
                     >
-                      <Edit2 className="h-3 w-3" />
+                      <Edit2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
+                      className="h-5 w-5 sm:h-6 sm:w-6 touch-manipulation"
                       onClick={() => onExport(session.id)}
                     >
-                      <Download className="h-3 w-3" />
+                      <Download className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-destructive"
+                      className="h-5 w-5 sm:h-6 sm:w-6 text-destructive touch-manipulation"
                       onClick={() => onDelete(session.id)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     </Button>
                   </div>
                 </>

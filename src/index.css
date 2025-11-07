@@ -129,4 +129,15 @@ All colors MUST be HSL.
     @apply inline-block w-2 h-2 rounded-full bg-primary/60 animate-pulse;
     animation-delay: calc(var(--i) * 0.2s);
   }
+  
+  /* Hide scrollbar for webkit browsers */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
