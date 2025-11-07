@@ -128,7 +128,12 @@ const Index = () => {
   };
 
   const handleSendMessage = async (content: string) => {
+    console.log("=== SEND MESSAGE TRIGGERED ===");
+    console.log("Selected providers:", selectedProviders);
+    console.log("Message content:", content);
+    
     if (selectedProviders.length === 0) {
+      console.warn("No providers selected");
       toast({
         title: "No providers selected",
         description: "Please select at least one AI provider",
@@ -138,6 +143,7 @@ const Index = () => {
     }
 
     if (!currentSession) {
+      console.log("No current session, creating new chat");
       handleNewChat();
       return;
     }
@@ -180,15 +186,18 @@ const Index = () => {
     });
 
     // Check for missing API keys
+    console.log("Checking API keys...");
     const missingKeys: string[] = [];
     selectedModelConfigs.forEach((model) => {
       const apiKey = localStorage.getItem(`${model.provider}_api_key`);
+      console.log(`API key for ${model.provider}:`, apiKey ? "PRESENT" : "MISSING");
       if (!apiKey) {
         missingKeys.push(model.provider.toUpperCase());
       }
     });
 
     if (missingKeys.length > 0) {
+      console.warn("Missing API keys:", missingKeys);
       toast({
         title: "Missing API Keys",
         description: `Please add API keys for: ${missingKeys.join(", ")}`,
@@ -197,24 +206,39 @@ const Index = () => {
       return;
     }
 
+    console.log("All API keys present, proceeding with request");
+    
+    // Show immediate feedback
+    toast({
+      title: "Processing Request",
+      description: `Querying ${selectedProviders.length} model${selectedProviders.length > 1 ? 's' : ''}...`,
+    });
+    
     setLoadingModels(new Set(selectedProviders));
-
-    console.log("Sending message to models:", selectedProviders);
+    console.log("Loading models set:", selectedProviders);
     
     try {
+      console.log("Calling callMultipleModels with configs:", selectedModelConfigs);
       const responses = await callMultipleModels(
         selectedModelConfigs,
         apiMessages,
         (provider, result) => {
-          console.log(`Response from ${provider}:`, result);
-          setModelResponses((prev) => ({ ...prev, [provider]: result }));
+          console.log(`✓ Progress update from ${provider}:`, result);
+          setModelResponses((prev) => {
+            const updated = { ...prev, [provider]: result };
+            console.log("Updated model responses state:", updated);
+            return updated;
+          });
           setLoadingModels((prev) => {
             const next = new Set(prev);
             next.delete(provider);
+            console.log("Removed from loading:", provider, "Remaining:", Array.from(next));
             return next;
           });
         }
       );
+      
+      console.log("All model calls completed. Responses:", responses);
 
       // Save responses to session (indexed by provider)
       const responsesMap: Record<string, ModelResponse> = {};
@@ -272,13 +296,20 @@ const Index = () => {
 
       setSessions(loadSessions());
     } catch (e) {
-      console.error(e);
+      console.error("❌ ERROR in handleSendMessage:", e);
+      console.error("Error stack:", e instanceof Error ? e.stack : "No stack trace");
+      
+      // Clear loading states on error
+      setLoadingModels(new Set());
+      
       toast({
-        title: "Error",
-        description: e instanceof Error ? e.message : "Failed to get responses",
+        title: "Request Failed",
+        description: e instanceof Error ? e.message : "Failed to get responses. Check console for details.",
         variant: "destructive",
       });
     }
+    
+    console.log("=== SEND MESSAGE COMPLETE ===");
   };
 
   return (
@@ -428,23 +459,23 @@ const Index = () => {
                   Individual Model Responses
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  {selectedProviders.map((provider) => {
-                    const response = modelResponses[provider];
-                    const isLoading = loadingModels.has(provider);
-                    const providerName = provider === "openai" ? "OpenAI" : provider === "anthropic" ? "Claude" : "Gemini";
-                    const color = provider === "openai" ? "from-blue-500 to-cyan-500" : provider === "anthropic" ? "from-purple-500 to-pink-500" : "from-orange-500 to-yellow-500";
+                     {selectedProviders.map((provider) => {
+                       const response = modelResponses[provider];
+                       const isLoading = loadingModels.has(provider);
+                       const providerName = provider === "openai" ? "OpenAI" : provider === "anthropic" ? "Claude" : "Gemini";
+                       const color = provider === "openai" ? "from-blue-500 to-cyan-500" : provider === "anthropic" ? "from-purple-500 to-pink-500" : "from-orange-500 to-yellow-500";
 
-                    return (
-                      <ModelResponseCard
-                        key={provider}
-                        modelName={providerName}
-                        response={response?.content}
-                        isLoading={isLoading}
-                        error={response?.error}
-                        color={color}
-                      />
-                    );
-                  })}
+                       return (
+                         <ModelResponseCard
+                           key={provider}
+                           modelName={providerName}
+                           response={response?.content}
+                           isLoading={isLoading}
+                           error={response?.error}
+                           color={color}
+                         />
+                       );
+                     })}
                 </div>
               </div>
             )}

@@ -14,9 +14,13 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[ChatInput] Submit triggered, message:", message, "disabled:", disabled);
     if (message.trim() && !disabled) {
+      console.log("[ChatInput] Calling onSend");
       onSend(message);
       setMessage("");
+    } else {
+      console.log("[ChatInput] Submit blocked - empty or disabled");
     }
   };
 

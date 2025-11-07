@@ -23,22 +23,48 @@ const callModel = async (
   modelId: string,
   messages: Message[]
 ): Promise<string> => {
+  console.log(`[callModel] Starting call for ${provider} with model ${modelId}`);
+  
   const apiKey = getApiKey(provider);
+  console.log(`[callModel] API key for ${provider}:`, apiKey ? "PRESENT" : "MISSING");
   
   if (!apiKey) {
-    throw new Error(`Please add ${provider.toUpperCase()} API key in settings`);
+    const error = `Please add ${provider.toUpperCase()} API key in settings`;
+    console.error(`[callModel] ${error}`);
+    throw new Error(error);
   }
 
   const functionName = `chat-${provider}`;
+  console.log(`[callModel] Invoking edge function: ${functionName}`);
   
-  const { data, error } = await supabase.functions.invoke(functionName, {
-    body: { messages, apiKey, model: modelId },
-  });
+  try {
+    const { data, error } = await supabase.functions.invoke(functionName, {
+      body: { messages, apiKey, model: modelId },
+    });
 
-  if (error) throw error;
-  if (data.error) throw new Error(data.error);
-  
-  return data.content;
+    console.log(`[callModel] Edge function response for ${provider}:`, { data, error });
+
+    if (error) {
+      console.error(`[callModel] Supabase error for ${provider}:`, error);
+      throw error;
+    }
+    
+    if (data?.error) {
+      console.error(`[callModel] API error for ${provider}:`, data.error);
+      throw new Error(data.error);
+    }
+    
+    if (!data?.content) {
+      console.error(`[callModel] No content in response for ${provider}:`, data);
+      throw new Error(`No content received from ${provider}`);
+    }
+    
+    console.log(`[callModel] Success for ${provider}, content length:`, data.content.length);
+    return data.content;
+  } catch (err) {
+    console.error(`[callModel] Exception for ${provider}:`, err);
+    throw err;
+  }
 };
 
 export const callMultipleModels = async (
