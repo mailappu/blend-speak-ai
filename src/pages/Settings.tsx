@@ -11,8 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import {
   getConfiguredModel,
   setConfiguredModel,
-  getCustomModel,
-  setCustomModel,
   getConsolidationTemplate,
   setConsolidationTemplate,
   resetConsolidationTemplate,
@@ -48,12 +46,6 @@ const Settings = () => {
     google: getConfiguredModel("google"),
   });
 
-  const [customModels, setCustomModels] = useState({
-    openai: getCustomModel("openai") || "",
-    anthropic: getCustomModel("anthropic") || "",
-    google: getCustomModel("google") || "",
-  });
-
   const [consolidationTemplate, setConsolidationTemplateState] = useState(
     getConsolidationTemplate()
   );
@@ -68,11 +60,6 @@ const Settings = () => {
     setConfiguredModel("openai", selectedModels.openai);
     setConfiguredModel("anthropic", selectedModels.anthropic);
     setConfiguredModel("google", selectedModels.google);
-
-    // Save custom models
-    setCustomModel("openai", customModels.openai);
-    setCustomModel("anthropic", customModels.anthropic);
-    setCustomModel("google", customModels.google);
 
     // Save consolidation template
     setConsolidationTemplate(consolidationTemplate);
@@ -117,7 +104,7 @@ const Settings = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold">Blend Speak AI Settings</h1>
+            <h1 className="text-3xl font-bold">Settings</h1>
           </div>
           <Button variant="outline" size="icon" onClick={toggleTheme}>
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -152,12 +139,11 @@ const Settings = () => {
           <CardHeader>
             <CardTitle>Model Configuration</CardTitle>
             <CardDescription>
-              Select which specific model to use for each provider. Leave "Custom Model" empty to use the
-              selected default.
+              Select which specific model to use for each provider and add your API keys.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>OpenAI Model</Label>
               <Select
                 value={selectedModels.openai}
@@ -173,17 +159,36 @@ const Settings = () => {
                   <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                placeholder="Custom OpenAI model name (optional)"
-                value={customModels.openai}
-                onChange={(e) =>
-                  setCustomModels((prev) => ({ ...prev, openai: e.target.value }))
-                }
-                className="mt-2"
-              />
+              
+              <div className="space-y-2">
+                <Label htmlFor="openai">OpenAI API Key</Label>
+                <div className="relative">
+                  <Input
+                    id="openai"
+                    type={showKeys.openai ? "text" : "password"}
+                    placeholder="sk-..."
+                    value={apiKeys.openai}
+                    onChange={(e) => handleKeyChange("openai", e.target.value)}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3"
+                    onClick={() => toggleShowKey("openai")}
+                  >
+                    {showKeys.openai ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Anthropic Model</Label>
               <Select
                 value={selectedModels.anthropic}
@@ -200,17 +205,36 @@ const Settings = () => {
                   <SelectItem value="claude-3-haiku-20240307">Claude 3 Haiku</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                placeholder="Custom Anthropic model name (optional)"
-                value={customModels.anthropic}
-                onChange={(e) =>
-                  setCustomModels((prev) => ({ ...prev, anthropic: e.target.value }))
-                }
-                className="mt-2"
-              />
+              
+              <div className="space-y-2">
+                <Label htmlFor="anthropic">Anthropic API Key</Label>
+                <div className="relative">
+                  <Input
+                    id="anthropic"
+                    type={showKeys.anthropic ? "text" : "password"}
+                    placeholder="sk-ant-..."
+                    value={apiKeys.anthropic}
+                    onChange={(e) => handleKeyChange("anthropic", e.target.value)}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3"
+                    onClick={() => toggleShowKey("anthropic")}
+                  >
+                    {showKeys.anthropic ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Google Model</Label>
               <Select
                 value={selectedModels.google}
@@ -226,105 +250,32 @@ const Settings = () => {
                   <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                placeholder="Custom Google model name (optional)"
-                value={customModels.google}
-                onChange={(e) =>
-                  setCustomModels((prev) => ({ ...prev, google: e.target.value }))
-                }
-                className="mt-2"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* API Keys */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>API Keys (BYOK)</CardTitle>
-            <CardDescription>
-              Your API keys are stored locally in your browser and never sent to any server.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="openai">OpenAI API Key</Label>
-              <div className="relative">
-                <Input
-                  id="openai"
-                  type={showKeys.openai ? "text" : "password"}
-                  placeholder="sk-..."
-                  value={apiKeys.openai}
-                  onChange={(e) => handleKeyChange("openai", e.target.value)}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3"
-                  onClick={() => toggleShowKey("openai")}
-                >
-                  {showKeys.openai ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="anthropic">Anthropic API Key</Label>
-              <div className="relative">
-                <Input
-                  id="anthropic"
-                  type={showKeys.anthropic ? "text" : "password"}
-                  placeholder="sk-ant-..."
-                  value={apiKeys.anthropic}
-                  onChange={(e) => handleKeyChange("anthropic", e.target.value)}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3"
-                  onClick={() => toggleShowKey("anthropic")}
-                >
-                  {showKeys.anthropic ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="google">Google API Key</Label>
-              <div className="relative">
-                <Input
-                  id="google"
-                  type={showKeys.google ? "text" : "password"}
-                  placeholder="AIza..."
-                  value={apiKeys.google}
-                  onChange={(e) => handleKeyChange("google", e.target.value)}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3"
-                  onClick={() => toggleShowKey("google")}
-                >
-                  {showKeys.google ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
+              
+              <div className="space-y-2">
+                <Label htmlFor="google">Google API Key</Label>
+                <div className="relative">
+                  <Input
+                    id="google"
+                    type={showKeys.google ? "text" : "password"}
+                    placeholder="AIza..."
+                    value={apiKeys.google}
+                    onChange={(e) => handleKeyChange("google", e.target.value)}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3"
+                    onClick={() => toggleShowKey("google")}
+                  >
+                    {showKeys.google ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
 
