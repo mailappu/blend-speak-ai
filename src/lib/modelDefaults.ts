@@ -29,9 +29,7 @@ export const getConsolidationTemplate = (): string => {
   const stored = localStorage.getItem("consolidation_template");
   return stored || `You are an expert AI tasked with merging multiple model responses into one clear, accurate, and coherent answer.
 
-Review all answers below, resolve contradictions, and write the best unified response.
-
-{responses}`;
+Review all answers below, resolve contradictions, and write the best unified response.`;
 };
 
 export const setConsolidationTemplate = (template: string): void => {
